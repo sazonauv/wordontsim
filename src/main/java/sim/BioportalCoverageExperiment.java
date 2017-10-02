@@ -1,9 +1,11 @@
 package sim;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -14,7 +16,6 @@ import java.util.logging.Logger;
 public class BioportalCoverageExperiment {
 
     private static final Logger log = Logger.getLogger(String.valueOf(BioportalCoverageExperiment.class));
-
 
     public static void main(String[] args) throws IOException {
 
@@ -96,13 +97,24 @@ public class BioportalCoverageExperiment {
             }
         }
 
-        log.info(pairsCoveredCount + " / " + allPairs.size() + " term pairs are found");
+        Out.p(pairsCoveredCount + " / " + allPairs.size() + " term pairs are found");
 
         Out.p("\nPairs distribution over ontologies:\n");
+        List<String[]> resultList = new ArrayList<>();
+        String[] header = new String[]{"ontology", "covered_term_pairs"};
+        resultList.add(header);
         for (String ont : ontTermsMap.keySet()) {
-            Out.p(ont + " : " + ontTermsMap.get(ont).size() + " term pairs");
+            int coveredPairsCount = ontTermsMap.get(ont).size();
+            String[] row = new String[]{ont, Integer.toString(coveredPairsCount)};
+            resultList.add(row);
+            Out.p(ont + " : " + coveredPairsCount + " term pairs");
         }
 
+        File csvDir = analogyFile.getParentFile();
+        File resultCSV = new File(csvDir, "bioportal_coverage_distr.csv");
+        CSVWriter writer = new CSVWriter(new FileWriter(resultCSV));
+        writer.writeAll(resultList);
+        writer.close();
     }
 
     private static Set<String[]> getAnalogyPairs(File analogyFile) throws IOException {
@@ -181,7 +193,7 @@ public class BioportalCoverageExperiment {
             }
         }
 
-        log.info(termsCoveredCount + " / " + allTerms.size() + " terms are found");
+        Out.p(termsCoveredCount + " / " + allTerms.size() + " terms are found");
     }
 
 
