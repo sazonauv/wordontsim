@@ -26,11 +26,10 @@ public class ClassFinder {
     }
 
     private void init() {
-        String iri = ontology.getOntologyID().getOntologyIRI().toString();
         classNames = new HashSet<>();
         classAnnotations = new HashSet<>();
         for (OWLClass cl : ontology.getClassesInSignature(Imports.INCLUDED)) {
-            String name = cl.toStringID().replace(iri, "").toLowerCase();
+            String name = cl.getIRI().getShortForm().toLowerCase();
             classNames.add(name);
             Iterable<OWLAnnotation> annotations = getAnnotationObjects(cl, ontology);
             for (OWLAnnotation ann : annotations) {
