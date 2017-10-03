@@ -1,4 +1,4 @@
-package sim;
+package uk.ac.man.cs.sim;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;

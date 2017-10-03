@@ -1,4 +1,4 @@
-package sim;
+package uk.ac.man.cs.sim;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntology;
