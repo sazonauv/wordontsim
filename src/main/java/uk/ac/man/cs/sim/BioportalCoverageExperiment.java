@@ -78,6 +78,17 @@ public class BioportalCoverageExperiment {
         writer.close();
     }
     
+     private static Map<String, String> getCoverdata(File coverage) throws IOException{
+    	Map<String, String> coverdata = new HashMap<String, String>();
+    	CSVReader reader = new CSVReader(new FileReader(coverage));
+    	List<String[]> rows = reader.readAll();
+    	rows.remove(rows.get(0));
+    	for (String[] row : rows) {
+    		coverdata.put(row[0],row[1]);   		
+    	}
+    	return coverdata;
+	}
+     
     private static void getAllPairs(File analogyFile,
             						File relatednessFile, File similarityFile) throws IOException{
     	log.info("Loading CSV files");
