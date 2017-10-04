@@ -14,7 +14,8 @@ import java.util.logging.Logger;
  * Created by slava on 05/09/17.
  */
 public class BioportalCoverageExperiment {
-
+     private static Set<String[]> allPairs;
+    
     private static final Logger log = Logger.getLogger(String.valueOf(BioportalCoverageExperiment.class));
 
     public static void main(String[] args) throws IOException {
@@ -23,23 +24,86 @@ public class BioportalCoverageExperiment {
         File analogyFile = new File(args[1]);
         File relatednessFile = new File(args[2]);
         File similarityFile = new File(args[3]);
-
+        
+        getAllPairs(analogyFile, relatednessFile, similarityFile);
+        clear();
 //        findCoveredTerms(ontDir, analogyFile, relatednessFile, similarityFile);
-        findCoveredPairs(ontDir, analogyFile, relatednessFile, similarityFile);
-
+        findCoveredPairs(ontDir, analogyFile);
+        calculateSimilarityScores(ontDir, analogyFile);
     }
 
+     private static void calculateSimilarityScores(File ontDir,File analogyFile) throws IOException{
+    	
+    	File csvDir = analogyFile.getParentFile();
+    	File coverage = new File(csvDir.getAbsolutePath()+"/bioportal_coverage_distr.csv");
+    	Map<String, String> coverdata = getCoverdata(coverage);
+    	
+        File resultCSV = new File(csvDir, "bioportal_calculate_similarity.csv");       
+    	
+        List<String> row = new ArrayList<String>();
+        row.add("ontologies");
+    	clear();
+    	for(String[] pairs : allPairs ){
+    		String pair = pairs[0] +" && "+ pairs[1];
+    		row.add(pair);   		
+    	}    
+    	CSVWriter writer = new CSVWriter(new FileWriter(resultCSV));
+    	writer.writeNext(row.toArray(new String[row.size()]));    		   	
+    	for (File ontFile : ontDir.listFiles()) {
+    		Out.p(coverdata.get(ontFile.getName()));
+    		List<String> scores = new ArrayList<String>();
+    		scores.add(ontFile.getName());
+    		
+    		log.info("checking "+ontFile.getName()+"\n");
+    		OntologyLoader loader = new OntologyLoader(ontFile, true);
+    		ClassFinder finder = new ClassFinder(loader.getOntology());  
+    		if(coverdata.get(ontFile.getName()).equals("0")){
+    			for(String[] pairs : allPairs ){
+    				scores.add("0.0"); 
+    			}
+    		}
+    		else{
+    			for(String[] pairs : allPairs ){
+        			SimilarityCalculator sim = new SimilarityCalculator(finder);
+        			String score = String.valueOf(sim.score(pairs[0], pairs[1]));
+        			log.info(String.valueOf(sim.score(pairs[0], pairs[1]))+pairs[0]+ pairs[1]+"\n");
+        			scores.add(score);   					       
+        		} 
+    		}
+    		writer.writeNext(scores.toArray(new String[scores.size()]));  		
+        }  	
+    		
+        log.info("Finish loop..");
+        
+        writer.close();
+    }
+    
+    private static void getAllPairs(File analogyFile,
+            						File relatednessFile, File similarityFile) throws IOException{
+    	log.info("Loading CSV files");
+    	Set<String[]> analogyPairs = getAnalogyPairs(analogyFile);
+    	Set<String[]> relatednessPairs = getRelatednessPairs(relatednessFile);
+    	Set<String[]> similarityPairs = getSimilarityPairs(similarityFile);
 
-    private static void findCoveredPairs(File ontDir, File analogyFile,
-                                         File relatednessFile, File similarityFile) throws IOException {
-        log.info("Loading CSV files");
-        Set<String[]> analogyPairs = getAnalogyPairs(analogyFile);
-        Set<String[]> relatednessPairs = getRelatednessPairs(relatednessFile);
-        Set<String[]> similarityPairs = getSimilarityPairs(similarityFile);
-
-        Set<String[]> allPairs = new HashSet<>(analogyPairs);
-        allPairs.addAll(relatednessPairs);
-        allPairs.addAll(similarityPairs);
+    	allPairs = new HashSet<String[]>(analogyPairs);
+    	allPairs.addAll(relatednessPairs);
+    	allPairs.addAll(similarityPairs);       	
+    }
+    
+    private static void clear(){
+    	Set<String> allpair = new HashSet<String>();
+    	for(String[] s : allPairs){
+    		allpair.add(s[0]+" "+s[1]);
+    	}
+    	allPairs.clear();
+    	for(String s1 : allpair){
+    		String[] s2= {s1.substring(0, s1.indexOf(" ")),s1.substring(s1.indexOf(" ")+1)};
+    		allPairs.add(s2);
+    	}
+    	
+    } 
+    
+    private static void findCoveredPairs(File ontDir, File analogyFile) throws IOException {       
 
         Set<String> allTerms = new HashSet<>();
         for (String[] pair : allPairs) {
