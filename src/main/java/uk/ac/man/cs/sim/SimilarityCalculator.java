@@ -10,7 +10,7 @@ import java.util.Set;
  * Created by slava on 03/10/17.
  */
 public class SimilarityCalculator {
-
+    private Map<String, OWLClass> nameClassMap;
     private ClassFinder finder;
 
     private OWLReasoner reasoner;
@@ -30,7 +30,23 @@ public class SimilarityCalculator {
         }
     }
 
-
+    public void contains(List<String> terms){
+    	nameClassMap = new HashedMap();
+    	for(String term : terms){
+    		OWLClass owlClass = finder.find(term);   		
+    		if(owlClass != null){
+    			nameClassMap.put(term, owlClass);
+    		}
+    	}
+    }
+    
+    public double computeScore(String term1, String term2){
+    	if(nameClassMap.keySet().contains(term1)&&nameClassMap.keySet().contains(term2)){
+    		return computeScore(nameClassMap.get(term1), nameClassMap.get(term2));
+    	}   	
+    	return 0;
+    }
+    
     public double score(String term1, String term2) {
         OWLClass cl1 = finder.find(term1);
         OWLClass cl2 = finder.find(term2);
