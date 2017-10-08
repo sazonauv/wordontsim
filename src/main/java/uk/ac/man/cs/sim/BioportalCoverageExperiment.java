@@ -51,42 +51,42 @@ public class BioportalCoverageExperiment {
     	writer.writeNext(row.toArray(new String[row.size()]));    		   	
     	for (File ontFile : ontDir.listFiles()) {
     		Out.p(coverdata.get(ontFile.getName()));
-    		List<String> scores = new ArrayList<String>();
+    		List<String> scores = new ArrayList<>();
     		scores.add(ontFile.getName());
     		
     		log.info("checking "+ontFile.getName()+"\n");
     		OntologyLoader loader = new OntologyLoader(ontFile, true);
     		ClassFinder finder = new ClassFinder(loader.getOntology());  
+    		SimilarityCalculator sim = new SimilarityCalculator(finder);
+    		sim.contains(new ArrayList<>(terms));
     		if(coverdata.get(ontFile.getName()).equals("0")){
     			for(String[] pairs : allPairs ){
     				scores.add("0.0"); 
     			}
     		}
     		else{
-    			for(String[] pairs : allPairs ){
-        			SimilarityCalculator sim = new SimilarityCalculator(finder);
-        			String score = String.valueOf(sim.score(pairs[0], pairs[1]));
-        			log.info(String.valueOf(sim.score(pairs[0], pairs[1]))+pairs[0]+ pairs[1]+"\n");
+    			for(String[] pairs : allPairs ){        			
+        			String score = String.valueOf(sim.computeScore(pairs[0], pairs[1]));
+        			log.info(String.valueOf(sim.score(pairs[0], pairs[1]))+" "+pairs[0]+" "+pairs[1]+"\n");
         			scores.add(score);   					       
         		} 
     		}
     		writer.writeNext(scores.toArray(new String[scores.size()]));  		
-        }  	
+        } 
+        writer.close();	
     		
-        log.info("Finish loop..");
-        
-        writer.close();
+        log.info("Finish loop..");             
     }
     
-     private static Map<String, String> getCoverdata(File coverage) throws IOException{
-    	Map<String, String> coverdata = new HashMap<String, String>();
+        private static Map<String, String> getCoverData(File coverage) throws IOException{
+    	Map<String, String> coverData = new HashMap<>();
     	CSVReader reader = new CSVReader(new FileReader(coverage));
     	List<String[]> rows = reader.readAll();
     	rows.remove(rows.get(0));
     	for (String[] row : rows) {
-    		coverdata.put(row[0],row[1]);   		
+    		coverData.put(row[0],row[1]);   		
     	}
-    	return coverdata;
+    	return coverData;
 	}
      
     private static void getAllPairs(File analogyFile,
