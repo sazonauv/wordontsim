@@ -36,21 +36,25 @@ public class BioportalCoverageExperiment {
     	
     	File csvDir = analogyFile.getParentFile();
     	File coverage = new File(csvDir.getAbsolutePath()+"/bioportal_coverage_distr.csv");
-    	Map<String, String> coverdata = getCoverdata(coverage);
+    	Map<String, String> coverData = getCoverData(coverage);
     	
         File resultCSV = new File(csvDir, "bioportal_calculate_similarity.csv");       
     	
-        List<String> row = new ArrayList<String>();
+       List<String> row = new ArrayList<>();
+        Set<String> terms = new HashSet<>();
         row.add("ontologies");
     	clear();
     	for(String[] pairs : allPairs ){
     		String pair = pairs[0] +" && "+ pairs[1];
-    		row.add(pair);   		
-    	}    
+    		row.add(pair);   	
+    		terms.add(pairs[0]);
+    		terms.add(pairs[1]);
+    	}  
+	     
     	CSVWriter writer = new CSVWriter(new FileWriter(resultCSV));
     	writer.writeNext(row.toArray(new String[row.size()]));    		   	
     	for (File ontFile : ontDir.listFiles()) {
-    		Out.p(coverdata.get(ontFile.getName()));
+    		Out.p(coverData.get(ontFile.getName()));
     		List<String> scores = new ArrayList<>();
     		scores.add(ontFile.getName());
     		
@@ -59,7 +63,7 @@ public class BioportalCoverageExperiment {
     		ClassFinder finder = new ClassFinder(loader.getOntology());  
     		SimilarityCalculator sim = new SimilarityCalculator(finder);
     		sim.contains(new ArrayList<>(terms));
-    		if(coverdata.get(ontFile.getName()).equals("0")){
+    		if(coverData.get(ontFile.getName()).equals("0")){
     			for(String[] pairs : allPairs ){
     				scores.add("0.0"); 
     			}
