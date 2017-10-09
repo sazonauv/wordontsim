@@ -3,8 +3,11 @@ package uk.ac.man.cs.sim;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import uk.ac.man.cs.ont.ClassFinder;
+import uk.ac.man.cs.ont.ReasonerLoader;
+import uk.ac.man.cs.ont.ReasonerName;
 
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by slava on 03/10/17.
@@ -30,8 +33,8 @@ public class SimilarityCalculator {
         }
     }
 
-    public void contains(List<String> terms){
-    	nameClassMap = new HashedMap();
+    public void contains(Collection<String> terms){
+    	nameClassMap = new HashMap();
     	for(String term : terms){
     		OWLClass owlClass = finder.find(term);   		
     		if(owlClass != null){

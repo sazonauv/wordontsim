@@ -1,4 +1,4 @@
-package uk.ac.man.cs.sim;
+package uk.ac.man.cs.ont;
 
 import org.semanticweb.owlapi.model.OWLAnnotation;
 import org.semanticweb.owlapi.model.OWLClass;
@@ -6,9 +6,7 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.parameters.Imports;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static org.semanticweb.owlapi.search.EntitySearcher.getAnnotationObjects;
 

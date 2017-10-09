@@ -1,4 +1,4 @@
-package uk.ac.man.cs.sim;
+package uk.ac.man.cs.io;
 
 /**
  * Created by slava on 15/09/17.

@@ -1,4 +1,4 @@
-package uk.ac.man.cs.sim;
+package uk.ac.man.cs.ont;
 
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -13,7 +13,7 @@ import org.semanticweb.owlapi.reasoner.SimpleConfiguration;
 public abstract class ReasonerLoader {
 
     public static final String INVALID_REASONER_ERR = "Valid reasoners: Hermit";
-//			+ " | Pellet | Fact | JFact | Pellet | TrOWL ";
+//            ", Pellet, JFact";
 
 
     /**
