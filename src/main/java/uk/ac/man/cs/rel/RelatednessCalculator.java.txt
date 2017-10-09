@@ -199,20 +199,7 @@ public class RelatednessCalculator {
             res = checkSubsumption(term1, term2);
 
             //"naive" approach
-        Set<OWLClass> classes = ontology.getClassesInSignature(); 
-        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
-
-        for(OWLClass A : classes) {
-            for(OWLClass B : classes){
-                for(OWLObjectProperty p : properties){ 
-
-                    res = res || checkExistentialRestriction(A, p, B);
-                    res = res || checkUniversalRestriction(A, p, B);
-                    res = res || checkCardinalityRestriction(A, p, B);
-                }
-            }
-        }
-        //    res = res || bruteForceRestrictionCheck();
+            res = res || bruteForceRestrictionCheck();
             //res = res || bruteForceCheckWithTopRelation();
 
             //optimized approach
