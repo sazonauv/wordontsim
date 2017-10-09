@@ -206,13 +206,9 @@ public class RelatednessCalculator {
             for(OWLClass B : classes){
                 for(OWLObjectProperty p : properties){ 
 
-                    OWLClassExpression some_p_B = factory.getOWLObjectSomeValuesFrom(p,B);
-                    OWLSubClassOfAxiom A_subclass_some_p_B = factory.getOWLSubClassOfAxiom(A,some_p_B);
-                    res = res || reasoner.isEntailed(A_subclass_some_p_B);
-
-                    //res = res || checkExistentialRestriction(A, p, B);
-                    //res = res || checkUniversalRestriction(A, p, B);
-                    //res = res || checkCardinalityRestriction(A, p, B);
+                    res = res || checkExistentialRestriction(A, p, B);
+                    res = res || checkUniversalRestriction(A, p, B);
+                    res = res || checkCardinalityRestriction(A, p, B);
                 }
             }
         }
