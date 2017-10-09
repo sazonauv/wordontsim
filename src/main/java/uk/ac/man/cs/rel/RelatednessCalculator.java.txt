@@ -1,0 +1,241 @@
+package uk.ac.man.cs.sim;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.semanticweb.owlapi.apibinding.OWLManager;
+//import org.semanticweb.owlapi.model.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
+import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.semanticweb.owlapi.model.OWLSubObjectPropertyOfAxiom;
+import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
+import org.semanticweb.owlapi.model.AddAxiom;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
+import org.semanticweb.owlapi.reasoner.InferenceType;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
+//import org.semanticweb.owlapi.reasoner.OWLOntologyCreationException;
+import org.semanticweb.owlapi.util.AbstractOWLStorer;
+
+/**
+ * Created by chris on 03/10/17.
+ */
+public class RelatednessCalculator {
+
+    private ClassFinder finder;
+    private OWLReasoner reasoner;
+    private OWLDataFactory factory;
+    private OWLOntologyManager manager;
+    private OWLOntology ontology;
+
+    public RelatednessCalculator(ClassFinder finder) {
+        this.finder = finder;
+        this.factory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+        this.manager = OWLManager.createOWLOntologyManager();
+        this.ontology = this.finder.getOntology();
+        loadReasoner();
+    }
+
+    private void loadReasoner() {
+        try {
+            reasoner = ReasonerLoader.initReasoner(finder.getOntology());
+            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean checkSubsumption(String term1, String term2){
+
+        boolean res = false;
+
+        OWLClass cl1 = finder.find(term1);
+        OWLClass cl2 = finder.find(term2);
+
+        if(cl1 == null || cl2 == null)
+            return res;
+
+        Set<OWLClass> superclasses = reasoner.getSuperClasses(cl1, false).getFlattened();
+        Set<OWLClass> subclasses = reasoner.getSubClasses(cl1, false).getFlattened();
+
+        if(superclasses != null)
+            res = res || superclasses.contains(cl2);
+
+        if(subclasses != null)
+            res = res || subclasses.contains(cl2);
+
+        return res;
+    }
+
+    private boolean checkExistentialRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+        OWLClassExpression some_p_B = factory.getOWLObjectSomeValuesFrom(p,B);
+        OWLSubClassOfAxiom A_subclass_some_p_B = factory.getOWLSubClassOfAxiom(A,some_p_B);
+        return(reasoner.isEntailed(A_subclass_some_p_B));
+    }
+
+    private boolean checkUniversalRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+        OWLClassExpression all_p_B = factory.getOWLObjectAllValuesFrom(p,B);
+        OWLSubClassOfAxiom A_subclass_all_p_B = factory.getOWLSubClassOfAxiom(A,all_p_B);
+        return reasoner.isEntailed(A_subclass_all_p_B);
+    }
+
+    private boolean checkCardinalityRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+        OWLClassExpression lt1_p_B = factory.getOWLObjectMinCardinality(1,p,B);
+        OWLClassExpression gt1_p_B = factory.getOWLObjectMaxCardinality(1,p,B);
+        OWLSubClassOfAxiom A_subclass_lt1_p_B = factory.getOWLSubClassOfAxiom(A,lt1_p_B);
+        OWLSubClassOfAxiom A_subclass_gt1_p_B = factory.getOWLSubClassOfAxiom(A,gt1_p_B);
+        return(reasoner.isEntailed(A_subclass_lt1_p_B) || reasoner.isEntailed(A_subclass_gt1_p_B));
+    }
+
+    private boolean bruteForceRestrictionCheck(){
+        boolean res = false;
+
+        Set<OWLClass> classes = ontology.getClassesInSignature(); 
+        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+
+        for(OWLClass A : classes) {
+            for(OWLClass B : classes){
+                for(OWLObjectProperty p : properties){ 
+
+                    res = res || checkExistentialRestriction(A, p, B);
+                    res = res || checkUniversalRestriction(A, p, B);
+                    res = res || checkCardinalityRestriction(A, p, B);
+                }
+            }
+        }
+        return res;
+    }
+
+    private boolean bruteForceCheckWithTopRelation(){
+        boolean res = false;
+        Set<OWLClass> classes = ontology.getClassesInSignature(); 
+        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+        //create TOP property
+        OWLObjectProperty relTop = factory.getOWLObjectProperty(IRI.create(ontology.getOntologyID().getOntologyIRI() + "#relTop"));
+
+        //make all properties subproperties of TOP
+        for(OWLObjectProperty p : properties){ 
+            manager.addAxiom(ontology, factory.getOWLSubObjectPropertyOfAxiom(p, relTop));
+        }
+
+        for(OWLClass A : classes) {
+            for(OWLClass B : classes){
+                res = res || checkExistentialRestriction(A, relTop, B);
+                res = res || checkUniversalRestriction(A, relTop, B);
+                res = res || checkCardinalityRestriction(A, relTop, B);
+            }
+        }
+
+        return res;
+    }
+
+    private boolean optimizedCheck(String term1, String term2){
+
+        boolean res = false;
+
+        OWLClass cl1 = finder.find(term1);
+        OWLClass cl2 = finder.find(term2);
+
+        if(cl1 == null || cl2 == null)
+            return res;
+
+        Set<OWLClass> classes = ontology.getClassesInSignature(); 
+        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+        Set<OWLClassExpression> restrictionClasses = new HashSet<>();
+
+        //collect all restriction classes
+        for(OWLClass A : classes) {
+            for(OWLObjectProperty p : properties){
+                restrictionClasses.add(factory.getOWLObjectSomeValuesFrom(p,A));
+                restrictionClasses.add(factory.getOWLObjectAllValuesFrom(p,A));
+                //TODO: cardinality, etc.
+            }
+        }
+
+        //create IRI name
+        String axiomName = "x0";
+        IRI iri;
+
+        for(OWLClassExpression exp : restrictionClasses){
+
+            //generate UUID randomUUID()
+            iri = IRI.create(ontology.getOntologyID().getOntologyIRI() + "#" + axiomName);
+            axiomName = "x" + (Integer.parseInt(axiomName.substring(1,axiomName.length()))+1);
+            OWLClass cls = factory.getOWLClass(iri);
+
+            manager.addAxiom(ontology, factory.getOWLEquivalentClassesAxiom(cls, exp));
+        }
+
+            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+
+            Set<OWLClass> superclasses = reasoner.getSuperClasses(cl1, false).getFlattened();
+            Set<OWLClass> subclasses = reasoner.getSubClasses(cl1, false).getFlattened();
+
+            if(superclasses != null)
+                res = superclasses.contains(cl2);
+
+            if(subclasses != null)
+                res = res || subclasses.contains(cl2);
+
+            return res;
+
+    }
+
+    public boolean related(String term1, String term2, boolean classesOnly) { 
+
+        boolean res = false;
+
+        if(classesOnly) {
+
+            //compute 'named' sub- and superclasses
+            res = checkSubsumption(term1, term2);
+
+            //"naive" approach
+        Set<OWLClass> classes = ontology.getClassesInSignature(); 
+        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+
+        for(OWLClass A : classes) {
+            for(OWLClass B : classes){
+                for(OWLObjectProperty p : properties){ 
+
+                    OWLClassExpression some_p_B = factory.getOWLObjectSomeValuesFrom(p,B);
+                    OWLSubClassOfAxiom A_subclass_some_p_B = factory.getOWLSubClassOfAxiom(A,some_p_B);
+                    res = res || reasoner.isEntailed(A_subclass_some_p_B);
+
+                    //res = res || checkExistentialRestriction(A, p, B);
+                    //res = res || checkUniversalRestriction(A, p, B);
+                    //res = res || checkCardinalityRestriction(A, p, B);
+                }
+            }
+        }
+        //    res = res || bruteForceRestrictionCheck();
+            //res = res || bruteForceCheckWithTopRelation();
+
+            //optimized approach
+            //res = optimizedCheck(term1, term2);
+        }
+
+        if(!classesOnly) {
+
+            //TODO: consider annodations, datatypse etc.
+            /*
+            for(OWLClass c : superclasses) {
+                for(OWLEntity e : c.getSignature())
+                {
+                }
+                Set<OWLAnnotationProperty> cAnnotations = c.getAnnotationPropertiesInSignature();
+            }*/
+
+            return false;
+        }
+        return res;
+    }
+}
