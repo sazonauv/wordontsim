@@ -9,9 +9,12 @@ import uk.ac.man.cs.rel.RelatednessCalculator;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 
 /**
  * Created by chris on 05/09/17.
@@ -40,14 +43,18 @@ public class BioportalRelatednessExperiment {
 
         // you can use this to filter out ontologies containing no or few pairs (see BioportalSimilarityExperiment)
         File coverageFile = new File(analogyFile.getParentFile(), "bioportal_coverage_distr.csv");
-        //boolean success = new File(analogyFile.getParentFile().getPath() + "test").mkdirs();
-        //if(!success)
-            //log.info("ERROR MAKING FIE");
+
         File destDir = new File(analogyFile.getParentFile().getPath() + "/relatednessResults");
         destDir.mkdir();
 
-        //File destDir = new File(analogyFile.getParentFile().getPath() + "test");
         bioRelExp.findRelatedPairs(ontDir, destDir);
+
+        Set<TermPair> relatedPairs = tdLoader.getRelatednessPairs();
+        Set<TermPair> similarPairs = tdLoader.getSimilarityPairs();
+        Set<TermPair> related_similar_pairs = new HashSet<>(relatedPairs);
+        related_similar_pairs.addAll(similarPairs);
+
+        bioRelExp.analyseResults(new File(destDir.getPath() + "/relatedInOntology.csv"), related_similar_pairs, destDir);
 
     }
 
@@ -81,6 +88,33 @@ public class BioportalRelatednessExperiment {
         CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
         writer.writeAll(relatedInOntology);
         writer.close();
+    }
+
+    private void analyseResults(File resultFile, Set<TermPair> GoldStadard_related, File destDir) throws IOException {
+
+        CSVReader reader = new CSVReader(new FileReader(resultFile));
+        List<String[]> rows = reader.readAll();
+        Set<String[]> inStandard = new HashSet<String[]>();
+        Set<String[]> notInStandard = new HashSet<String[]>();
+
+        for(String[] row : rows){
+            if(GoldStadard_related.contains(new TermPair(row[0], row[1]))){
+                inStandard.add(new String[]{row[0], row[1], "1"});
+            }else{
+                notInStandard.add(new String[]{row[0], row[1], "0"}); 
+            } 
+        }
+
+        File resultRelCSV = new File(destDir, "inStandard.csv");
+        CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
+        writer.writeAll(inStandard);
+        writer.close();
+
+        File resultRelCSV1 = new File(destDir, "notInStandard.csv");
+        CSVWriter writer1 = new CSVWriter(new FileWriter(resultRelCSV1));
+        writer1.writeAll(notInStandard);
+        writer1.close();
+
     }
 
 
