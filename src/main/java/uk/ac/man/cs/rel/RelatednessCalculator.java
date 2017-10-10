@@ -46,13 +46,15 @@ public class RelatednessCalculator {
     private OWLOntologyManager manager;
     private OWLOntology ontology;
     private Set<String[]> A_p_B;
+    private File destinatonDirectory;
 
-    public RelatednessCalculator(ClassFinder finder) {
+    public RelatednessCalculator(ClassFinder finder, File destDir) {
         this.finder = finder;
         this.factory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
         this.manager = OWLManager.createOWLOntologyManager();
         this.ontology = this.finder.getOntology();
         this.A_p_B = new HashSet<String[]>();
+        this.destinatonDirectory = destDir;
         loadReasoner();
     }
 
@@ -237,14 +239,14 @@ public class RelatednessCalculator {
         return;
     }
 
-    private void storeRelationsInFiles(File destDir) throws IOException{
-        File resultRelCSV = new File(destDir, ontology.getOntologyID().getOntologyIRI().get() + ".csv");
+    private void storeRelationsInFiles(File destDir, String fileName) throws IOException{
+        File resultRelCSV = new File(destDir, fileName + ".csv");
         CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
         writer.writeAll(A_p_B);
         writer.close();
     }
 
-    public boolean related(String term1, String term2, boolean classesOnly) throws IOException { 
+    public boolean related(String term1, String term2, boolean classesOnly, File destDir, String fileName) throws IOException { 
 
         boolean res = false;
 
@@ -258,7 +260,7 @@ public class RelatednessCalculator {
             //res = res || bruteForceCheckWithTopRelation();
 
             //printRelatedByRelation();
-            storeRelationsInFiles(new File("/home/chris/PhD/1year/similarities/test/"));
+            storeRelationsInFiles(destDir, fileName);
             //optimized approach
             //res = optimizedCheck(term1, term2);
         }

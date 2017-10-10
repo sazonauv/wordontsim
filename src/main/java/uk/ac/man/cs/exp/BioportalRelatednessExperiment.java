@@ -40,7 +40,14 @@ public class BioportalRelatednessExperiment {
 
         // you can use this to filter out ontologies containing no or few pairs (see BioportalSimilarityExperiment)
         File coverageFile = new File(analogyFile.getParentFile(), "bioportal_coverage_distr.csv");
-        bioRelExp.findRelatedPairs(ontDir, analogyFile.getParentFile());
+        //boolean success = new File(analogyFile.getParentFile().getPath() + "test").mkdirs();
+        //if(!success)
+            //log.info("ERROR MAKING FIE");
+        File destDir = new File(analogyFile.getParentFile().getPath() + "/relatednessResults");
+        destDir.mkdir();
+
+        //File destDir = new File(analogyFile.getParentFile().getPath() + "test");
+        bioRelExp.findRelatedPairs(ontDir, destDir);
 
     }
 
@@ -57,10 +64,10 @@ public class BioportalRelatednessExperiment {
             OntologyLoader loader = new OntologyLoader(ontFile, true);
             ClassFinder finder = new ClassFinder(loader.getOntology());
 
-            RelatednessCalculator relCalc = new RelatednessCalculator(finder);
+            RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir);
 
             for (TermPair pair : termPairs) {
-                if(relCalc.related(pair.first, pair.second, true)){
+                if(relCalc.related(pair.first, pair.second, true, csvDir, ontFile.getName())){
                     log.info("RELATED PAIR: " + pair);
                     String[] row = {pair.first, pair.second, ontFile.getName()};
                     relatedInOntologySet.add(row);
