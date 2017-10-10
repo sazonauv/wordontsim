@@ -1,4 +1,4 @@
-package uk.ac.man.cs.sim;
+package uk.ac.man.cs.rel;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -24,6 +24,10 @@ import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 //import org.semanticweb.owlapi.reasoner.OWLOntologyCreationException;
 import org.semanticweb.owlapi.util.AbstractOWLStorer;
+
+import uk.ac.man.cs.ont.ClassFinder;
+import uk.ac.man.cs.ont.ReasonerLoader;
+import uk.ac.man.cs.ont.ReasonerName;
 
 import java.io.File;
 import java.io.FileReader;
