@@ -89,55 +89,35 @@ public class RelatednessCalculator {
         return res;
     }
 
-    private boolean checkExistentialRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+    private boolean checkExistentialRestriction(OWLClass A, OWLObjectPropertyExpression p, OWLClass B){
         OWLClassExpression some_p_B = factory.getOWLObjectSomeValuesFrom(p,B);
         OWLSubClassOfAxiom A_subclass_some_p_B = factory.getOWLSubClassOfAxiom(A,some_p_B);
 
-        //check for inverse object property
-        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
-        OWLClassExpression some_q_B = factory.getOWLObjectSomeValuesFrom(q,B);
-        OWLSubClassOfAxiom A_subclass_some_q_B = factory.getOWLSubClassOfAxiom(A,some_q_B);
-
-        return(reasoner.isEntailed(A_subclass_some_p_B) || reasoner.isEntailed(A_subclass_some_q_B));
+        return(reasoner.isEntailed(A_subclass_some_p_B));
     }
 
-    private boolean checkUniversalRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+    private boolean checkUniversalRestriction(OWLClass A, OWLObjectPropertyExpression p, OWLClass B){
         OWLClassExpression all_p_B = factory.getOWLObjectAllValuesFrom(p,B);
         OWLSubClassOfAxiom A_subclass_all_p_B = factory.getOWLSubClassOfAxiom(A,all_p_B);
 
-        //check for inverse object property
-        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
-        OWLClassExpression all_q_B = factory.getOWLObjectSomeValuesFrom(q,B);
-        OWLSubClassOfAxiom A_subclass_all_q_B = factory.getOWLSubClassOfAxiom(A,all_q_B);
-
-        return(reasoner.isEntailed(A_subclass_all_p_B) || reasoner.isEntailed(A_subclass_all_q_B));
+        return(reasoner.isEntailed(A_subclass_all_p_B));
     }
 
-    private boolean checkMinCardinalityRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+    private boolean checkMinCardinalityRestriction(OWLClass A, OWLObjectPropertyExpression p, OWLClass B){
         OWLClassExpression lt1_p_B = factory.getOWLObjectMinCardinality(1,p,B);
         OWLSubClassOfAxiom A_subclass_lt1_p_B = factory.getOWLSubClassOfAxiom(A,lt1_p_B);
 
-        //check for inverse object property
-        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
-        OWLClassExpression lt1_q_B = factory.getOWLObjectMinCardinality(1,q,B);
-        OWLSubClassOfAxiom A_subclass_lt1_q_B = factory.getOWLSubClassOfAxiom(A,lt1_q_B);
-
-        return(reasoner.isEntailed(A_subclass_lt1_p_B) || reasoner.isEntailed(A_subclass_lt1_q_B));
+        return(reasoner.isEntailed(A_subclass_lt1_p_B));
     }
 
-    private boolean checkMaxCardinalityRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+    private boolean checkMaxCardinalityRestriction(OWLClass A, OWLObjectPropertyExpression p, OWLClass B){
         OWLClassExpression gt1_p_B = factory.getOWLObjectMaxCardinality(1,p,B);
         OWLSubClassOfAxiom A_subclass_gt1_p_B = factory.getOWLSubClassOfAxiom(A,gt1_p_B);
 
-        //check for inverse object property
-        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
-        OWLClassExpression gt1_q_B = factory.getOWLObjectMaxCardinality(1,q,B);
-        OWLSubClassOfAxiom A_subclass_gt1_q_B = factory.getOWLSubClassOfAxiom(A,gt1_q_B);
-
-        return (reasoner.isEntailed(A_subclass_gt1_p_B) || reasoner.isEntailed(A_subclass_gt1_q_B));
+        return (reasoner.isEntailed(A_subclass_gt1_p_B));
     }
 
-    private boolean checkRestrictions(OWLClass cl1, OWLObjectProperty p, OWLClass cl2){
+    private boolean checkRestrictions(OWLClass cl1, OWLObjectPropertyExpression p, OWLClass cl2){
         boolean existentialCheck = false;
         boolean universalCheck = false;
         boolean cardinalityCheck = false;
@@ -184,6 +164,13 @@ public class RelatednessCalculator {
                 res = true;
             }
             if(checkRestrictions(cl2, p, cl1)){
+                res = true;
+            }
+            OWLObjectPropertyExpression q = p.getInverseProperty();
+            if(checkRestrictions(cl1, q, cl2)){
+                res = true;
+            }
+            if(checkRestrictions(cl2, q, cl1)){
                 res = true;
             }
         }
