@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+
 /**
  * Created by chris on 05/09/17.
  */
@@ -32,7 +34,7 @@ public class BioportalRelatednessExperiment {
     }
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, OWLOntologyCreationException {
         File ontDir = new File(args[0]);
         File analogyFile = new File(args[1]);
         File relatednessFile = new File(args[2]);
@@ -60,7 +62,7 @@ public class BioportalRelatednessExperiment {
 
 
 
-    private void findRelatedPairs(File ontDir, File csvDir) throws IOException {
+    private void findRelatedPairs(File ontDir, File csvDir) throws IOException, OWLOntologyCreationException {
 
         // container for all found related pairs
         Set<String[]> relatedInOntologySet = new HashSet<>();
