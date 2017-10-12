@@ -92,21 +92,49 @@ public class RelatednessCalculator {
     private boolean checkExistentialRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
         OWLClassExpression some_p_B = factory.getOWLObjectSomeValuesFrom(p,B);
         OWLSubClassOfAxiom A_subclass_some_p_B = factory.getOWLSubClassOfAxiom(A,some_p_B);
-        return(reasoner.isEntailed(A_subclass_some_p_B));
+
+        //check for inverse object property
+        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
+        OWLClassExpression some_q_B = factory.getOWLObjectSomeValuesFrom(q,B);
+        OWLSubClassOfAxiom A_subclass_some_q_B = factory.getOWLSubClassOfAxiom(A,some_q_B);
+
+        return(reasoner.isEntailed(A_subclass_some_p_B) || reasoner.isEntailed(A_subclass_some_q_B));
     }
 
     private boolean checkUniversalRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
         OWLClassExpression all_p_B = factory.getOWLObjectAllValuesFrom(p,B);
         OWLSubClassOfAxiom A_subclass_all_p_B = factory.getOWLSubClassOfAxiom(A,all_p_B);
-        return reasoner.isEntailed(A_subclass_all_p_B);
+
+        //check for inverse object property
+        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
+        OWLClassExpression all_q_B = factory.getOWLObjectSomeValuesFrom(q,B);
+        OWLSubClassOfAxiom A_subclass_all_q_B = factory.getOWLSubClassOfAxiom(A,all_q_B);
+
+        return(reasoner.isEntailed(A_subclass_all_p_B) || reasoner.isEntailed(A_subclass_all_q_B));
     }
 
-    private boolean checkCardinalityRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+    private boolean checkMinCardinalityRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
         OWLClassExpression lt1_p_B = factory.getOWLObjectMinCardinality(1,p,B);
-        OWLClassExpression gt1_p_B = factory.getOWLObjectMaxCardinality(1,p,B);
         OWLSubClassOfAxiom A_subclass_lt1_p_B = factory.getOWLSubClassOfAxiom(A,lt1_p_B);
+
+        //check for inverse object property
+        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
+        OWLClassExpression lt1_q_B = factory.getOWLObjectMinCardinality(1,q,B);
+        OWLSubClassOfAxiom A_subclass_lt1_q_B = factory.getOWLSubClassOfAxiom(A,lt1_q_B);
+
+        return(reasoner.isEntailed(A_subclass_lt1_p_B) || reasoner.isEntailed(A_subclass_lt1_q_B));
+    }
+
+    private boolean checkMaxCardinalityRestriction(OWLClass A, OWLObjectProperty p, OWLClass B){
+        OWLClassExpression gt1_p_B = factory.getOWLObjectMaxCardinality(1,p,B);
         OWLSubClassOfAxiom A_subclass_gt1_p_B = factory.getOWLSubClassOfAxiom(A,gt1_p_B);
-        return(reasoner.isEntailed(A_subclass_lt1_p_B) || reasoner.isEntailed(A_subclass_gt1_p_B));
+
+        //check for inverse object property
+        OWLObjectPropertyExpression q = p.getInverseProperty();//.asOWLObjectProperty();
+        OWLClassExpression gt1_q_B = factory.getOWLObjectMaxCardinality(1,q,B);
+        OWLSubClassOfAxiom A_subclass_gt1_q_B = factory.getOWLSubClassOfAxiom(A,gt1_q_B);
+
+        return (reasoner.isEntailed(A_subclass_gt1_p_B) || reasoner.isEntailed(A_subclass_gt1_q_B));
     }
 
     private boolean checkRestrictions(OWLClass cl1, OWLObjectProperty p, OWLClass cl2){
@@ -124,9 +152,15 @@ public class RelatednessCalculator {
             A_p_B.add(new String[]{cl1.toString(), p.toString(), cl2.toString(), "A"});
         }
 
-        if(checkCardinalityRestriction(cl1, p, cl2)){
+        if(checkMinCardinalityRestriction(cl1, p, cl2)){
             cardinalityCheck = true;
-            A_p_B.add(new String[]{cl1.toString(), p.toString(), cl2.toString(), "C"});
+            A_p_B.add(new String[]{cl1.toString(), p.toString(), cl2.toString(), "m"});
+
+        }
+
+        if(checkMaxCardinalityRestriction(cl1, p, cl2)){
+            cardinalityCheck = true;
+            A_p_B.add(new String[]{cl1.toString(), p.toString(), cl2.toString(), "M"});
 
         }
         return(existentialCheck || universalCheck || cardinalityCheck);
@@ -173,7 +207,7 @@ public class RelatednessCalculator {
             for(OWLClass B : classes){
                 res = res || checkExistentialRestriction(A, relTop, B);
                 res = res || checkUniversalRestriction(A, relTop, B);
-                res = res || checkCardinalityRestriction(A, relTop, B);
+                res = res || checkMinCardinalityRestriction(A, relTop, B);
             }
         }
 
