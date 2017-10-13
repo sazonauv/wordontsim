@@ -22,7 +22,7 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner;
 
 import com.opencsv.CSVWriter;
 
-import owl.cs.man.ac.uk.wordontsim.OntologyLoader;
+import uk.ac.man.cs.ont.OntologyLoader;
 import uk.ac.man.cs.io.TermDataLoader;
 import uk.ac.man.cs.io.TermPair;
 import uk.ac.man.cs.ont.ClassFinder;
