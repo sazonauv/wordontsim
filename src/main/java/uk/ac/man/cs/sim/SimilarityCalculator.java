@@ -1,8 +1,11 @@
 package uk.ac.man.cs.sim;
 
 import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.util.OntologyAxiomPair;
+
 import uk.ac.man.cs.ont.ClassFinder;
 import uk.ac.man.cs.ont.ReasonerLoader;
 import uk.ac.man.cs.ont.ReasonerName;
@@ -20,13 +23,17 @@ public class SimilarityCalculator {
 
 
     public SimilarityCalculator(ClassFinder finder) {
-        this.finder = finder;
-        loadReasoner();
+        this.finder = finder;      
+        loadReasoner(finder.getOntology());
     }
-
-    private void loadReasoner() {
+    
+    public SimilarityCalculator(ClassFinder finder, SimilarityType similarityType){
+    	this.finder = finder;
+    }
+    
+    private void loadReasoner(OWLOntology ontology) {
         try {
-            reasoner = ReasonerLoader.initReasoner(finder.getOntology());
+            reasoner = ReasonerLoader.initReasoner(ontology);
             reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
         } catch (Exception e) {
             e.printStackTrace();
@@ -43,11 +50,21 @@ public class SimilarityCalculator {
     	}
     }
     
+    public Map<String, OWLClass> getNameClassMap(){
+    	return nameClassMap;
+    }
+    
     public double computeScore(String term1, String term2){
     	if(nameClassMap.keySet().contains(term1)&&nameClassMap.keySet().contains(term2)){
     		return computeScore(nameClassMap.get(term1), nameClassMap.get(term2));
     	}   	
     	return 0;
+    }
+    
+    public double computeModuleScore(String term1, String term2, OWLOntology ontology){
+    	loadReasoner(ontology);
+    	System.out.println("finish loading reasoner");
+    	return computeScore(nameClassMap.get(term1), nameClassMap.get(term2));
     }
     
     public double score(String term1, String term2) {
@@ -95,3 +112,4 @@ public class SimilarityCalculator {
 
 
 }
+
