@@ -49,12 +49,14 @@ public class BioportalRelatednessExperiment {
         File destDir = new File(analogyFile.getParentFile().getPath() + "/relatednessResults");
         destDir.mkdir();
 
-        bioRelExp.findRelatedPairs(ontDir, destDir);
 
         Set<TermPair> relatedPairs = tdLoader.getRelatednessPairs();
         Set<TermPair> similarPairs = tdLoader.getSimilarityPairs();
         Set<TermPair> related_similar_pairs = new HashSet<>(relatedPairs);
         related_similar_pairs.addAll(similarPairs);
+
+        bioRelExp.findRelatedPairs(ontDir, destDir, related_similar_pairs);
+        //bioRelExp.findRelatedPairs(ontDir, destDir);
 
         bioRelExp.analyseResults(new File(destDir.getPath() + "/relatedInOntology.csv"), related_similar_pairs, destDir);
 
@@ -74,6 +76,42 @@ public class BioportalRelatednessExperiment {
             ClassFinder finder = new ClassFinder(loader.getOntology());
 
             RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir);
+
+            for (TermPair pair : termPairs) {
+                if(relCalc.related(pair.first, pair.second, true, csvDir, ontFile.getName())){
+                    log.info("RELATED PAIR: " + pair);
+                    String[] row = {pair.first, pair.second, ontFile.getName()};
+                    relatedInOntologySet.add(row);
+                }
+            }
+        }
+
+        List<String[]> relatedInOntology = new ArrayList<>(relatedInOntologySet);
+
+        File resultRelCSV = new File(csvDir, "relatedInOntology.csv");
+        CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
+        writer.writeAll(relatedInOntology);
+        writer.close();
+    }
+
+    private void findRelatedPairs(File ontDir, File csvDir, Set<TermPair> pairs) throws IOException, OWLOntologyCreationException {
+
+        // container for all found related pairs
+        Set<String[]> relatedInOntologySet = new HashSet<>();
+        Set<String> terms = new HashSet<>();
+        for(TermPair p : pairs){
+            terms.add(p.first);
+            terms.add(p.second);
+        }
+
+
+        for (File ontFile : ontDir.listFiles()) {
+
+            log.info("\tLoading ontology to check for RELATEDNESS " + " : " + ontFile.getName());
+            OntologyLoader loader = new OntologyLoader(ontFile, true);
+            ClassFinder finder = new ClassFinder(loader.getOntology());
+
+            RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir, terms);
 
             for (TermPair pair : termPairs) {
                 if(relCalc.related(pair.first, pair.second, true, csvDir, ontFile.getName())){

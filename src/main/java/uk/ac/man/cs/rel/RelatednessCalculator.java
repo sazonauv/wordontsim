@@ -52,7 +52,6 @@ public class RelatednessCalculator {
 
     private ClassFinder finder;
     private OWLReasoner reasoner;
-    private OWLReasoner moduleReasoner;
 
     private OWLDataFactory factory;
     private OWLOntologyManager manager;
@@ -69,14 +68,52 @@ public class RelatednessCalculator {
         this.destinatonDirectory = destDir;
         loadReasoner();
     }
+    
+    public RelatednessCalculator(ClassFinder finder, File destDir, Set<String> terms) throws OWLOntologyCreationException {
+        this.finder = finder;
+        this.factory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+        this.manager = OWLManager.createOWLOntologyManager();
+        this.ontology = this.finder.getOntology();
+        this.A_p_B = new HashSet<String[]>();
+        this.destinatonDirectory = destDir;
+        loadModuleReasoner(terms);
+    }
 
     private void loadReasoner() {
         try {
+
+            //TODO: Use finder to locate all relevant classes, extarct module, ... HERE
             reasoner = ReasonerLoader.initReasoner(finder.getOntology());
             reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void loadModuleReasoner(Set<String> terms) throws OWLOntologyCreationException{
+
+            SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(manager, ontology, ModuleType.BOT);
+
+            Set<OWLEntity> ModuleSignature = new HashSet<>();
+            for(String term  : terms){
+                OWLClass cl = finder.find(term);
+                if(cl != null)
+                    ModuleSignature.addAll(cl.getSignature());
+            }
+
+            Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+            for(OWLObjectProperty p : properties){
+                ModuleSignature.addAll(p.getSignature());
+            }
+
+            OWLOntology module = extractor.extractAsOntology(ModuleSignature, IRI.create(UUID.randomUUID().toString()));
+
+            try {
+                reasoner = ReasonerLoader.initReasoner(module);
+                reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
     }
 
     private boolean checkSubsumption(String term1, String term2){
@@ -99,43 +136,6 @@ public class RelatednessCalculator {
             res = res || subclasses.contains(cl2);
 
         return res;
-    }
-
-    private boolean checkSubsumptionModule(String term1, String term2) throws OWLOntologyCreationException{
-
-            boolean res = false;
-
-            OWLClass cl1 = finder.find(term1);
-            OWLClass cl2 = finder.find(term2);
-
-            if(cl1 == null || cl2 == null)
-                return res;
-
-            //instead of ontology, extract relevant module
-            SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(manager, ontology, ModuleType.BOT);
-
-            //get signature of classes that correspond to terms
-            Set<OWLEntity> sig = cl1.getSignature();
-            sig.addAll(cl2.getSignature());
-            OWLOntology module = extractor.extractAsOntology(sig, IRI.create(UUID.randomUUID().toString()));
-
-            try {
-                moduleReasoner = ReasonerLoader.initReasoner(module);
-                moduleReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            Set<OWLClass> superclasses = moduleReasoner.getSuperClasses(cl1, false).getFlattened();
-            Set<OWLClass> subclasses = moduleReasoner.getSubClasses(cl1, false).getFlattened();
-
-            if(superclasses != null)
-                res = res || superclasses.contains(cl2);
-
-            if(subclasses != null)
-                res = res || subclasses.contains(cl2);
-
-                return res;
     }
 
     private boolean checkExistentialRestriction(OWLClass A, OWLObjectPropertyExpression p, OWLClass B){
@@ -328,8 +328,6 @@ public class RelatednessCalculator {
 
             //compute 'named' sub- and superclasses
             res = checkSubsumption(term1, term2);
-            //res = checkSubsumptionModule(term1, term2);
-
 
             //naive approach
             res = res || bruteForceRestrictionCheck(term1, term2);
