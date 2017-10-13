@@ -21,7 +21,7 @@ import com.opencsv.CSVWriter;
 import java.util.List;
 import java.util.Map;
 
-import owl.cs.man.ac.uk.wordontsim.OntologyLoader;
+import uk.ac.man.cs.ont.OntologyLoader;
 import uk.ac.man.cs.io.TermDataLoader;
 import uk.ac.man.cs.io.TermPair;
 import uk.ac.man.cs.ont.ClassFinder;
