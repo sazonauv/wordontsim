@@ -1,7 +1,8 @@
 package uk.ac.man.cs.sim;
 
 public enum SimilarityType {
-	MODULE("MODULE");
+	MODULE("MODULE"),
+	ABOX("ABOX");
 	   
 	private final String name;
 
