@@ -9,7 +9,8 @@ public enum ReasonerName {
     FACT("FACT"),
     PELLET("PELLET"),
     JFACT("JFACT"),
-    TROWL("TROWL");
+    TROWL("TROWL"),
+    ELK("ELK");
 
     private final String name;
 
