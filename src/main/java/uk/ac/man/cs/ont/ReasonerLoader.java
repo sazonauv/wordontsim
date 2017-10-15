@@ -87,6 +87,10 @@ public abstract class ReasonerLoader {
             reasonerFactory = new ReasonerFactory();
             reasoner = reasonerFactory.createReasoner(ontology, config);
         }
+        else if(reasonerName.equals(ReasonerName.ELK)){       	
+            reasonerFactory = new ElkReasonerFactory();
+            reasoner = reasonerFactory.createReasoner(ontology, config);
+        }
 //		else if (reasonerName.equals(ReasonerName.TROWL)) {
 //			reasonerFactory = new RELReasonerFactory();
 //			reasoner = reasonerFactory.createReasoner(ontology);
