@@ -53,4 +53,13 @@ public class RemoveOntologyRule {
 			}				
 		}			
 	}
+	public void printAxiomType(){
+		Set<String> axiomTypes = new HashSet<String>();
+		for(OWLAxiom owlAxiom : ontology.getAxioms()){
+			axiomTypes.add(owlAxiom.getAxiomType().toString());				
+		}
+		for(String axiomType:axiomTypes){
+			Out.p(axiomType);
+		}	
+	}
 }
