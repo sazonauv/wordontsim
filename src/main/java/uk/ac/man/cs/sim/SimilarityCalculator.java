@@ -62,7 +62,7 @@ public class SimilarityCalculator {
     }
     
     public double computeModuleScore(String term1, String term2, OWLOntology ontology){
-    	loadReasoner(ontology);
+    	loadReasoner(ontology, ReasonerName.ELK);
     	System.out.println("finish loading reasoner");
     	return computeScore(nameClassMap.get(term1), nameClassMap.get(term2));
     }
