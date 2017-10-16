@@ -39,6 +39,15 @@ public class SimilarityCalculator {
             e.printStackTrace();
         }
     }
+    
+     private void loadReasoner(OWLOntology ontology,ReasonerName reasonerName) {
+        try {
+            reasoner = ReasonerLoader.initReasoner(reasonerName, ontology);
+            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public void contains(Collection<String> terms){
     	nameClassMap = new HashMap();
