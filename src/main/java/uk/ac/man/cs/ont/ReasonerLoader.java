@@ -6,7 +6,7 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerConfiguration;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.SimpleConfiguration;
-
+import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 /**
  * Created by slava on 15/09/17.
  */
