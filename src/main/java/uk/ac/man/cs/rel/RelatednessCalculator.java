@@ -28,6 +28,7 @@ import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.reasoner.InferenceType;
+import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 //import org.semanticweb.owlapi.reasoner.OWLOntologyCreationException;
 import org.semanticweb.owlapi.util.AbstractOWLStorer;
@@ -92,21 +93,28 @@ public class RelatednessCalculator {
 
     private void loadModuleReasoner(Set<String> terms) throws OWLOntologyCreationException{
 
+            //Set<OWLAxiom> TBOX = ontology.getTBoxAxioms(Imports.INCLUDED);
+            //OWLOntology tbox_ont = manager.createOntology(TBOX, IRI.create(UUID.randomUUID().toString()));
+            //ClassFinder F = new ClassFinder(tbox_ont);
+            //SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(manager, tbox_ont, ModuleType.BOT);
+
             SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(manager, ontology, ModuleType.BOT);
 
-            Set<OWLEntity> ModuleSignature = new HashSet<>();
+            Set<OWLEntity> moduleSignature = new HashSet<>();
             for(String term  : terms){
                 OWLClass cl = finder.find(term);
+                //OWLClass cl = F.find(term);
                 if(cl != null)
-                    ModuleSignature.addAll(cl.getSignature());
+                    moduleSignature.addAll(cl.getSignature());
             }
 
             Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
             for(OWLObjectProperty p : properties){
-                ModuleSignature.addAll(p.getSignature());
+                moduleSignature.addAll(p.getSignature());
             }
 
-            OWLOntology module = extractor.extractAsOntology(ModuleSignature, IRI.create(UUID.randomUUID().toString()));
+            OWLOntology module = extractor.extractAsOntology(moduleSignature, IRI.create(UUID.randomUUID().toString()));
+
 
             try {
                 reasoner = ReasonerLoader.initReasoner(module);
@@ -204,8 +212,6 @@ public class RelatednessCalculator {
         if(cl1 == null || cl2 == null)
             return res;
 
-
-
         //Set<OWLClass> classes = ontology.getClassesInSignature(); 
         Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
 
@@ -233,26 +239,42 @@ public class RelatednessCalculator {
 
     private boolean bruteForceCheckWithTopRelation(String term1, String term2){
         boolean res = false;
-        Set<OWLClass> classes = ontology.getClassesInSignature(); 
-        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
-        //create TOP property
-        OWLObjectProperty relTop = factory.getOWLObjectProperty(IRI.create(ontology.getOntologyID().getOntologyIRI() + "#relTop"));
 
-        //make all properties subproperties of TOP
+        OWLClass cl1 = finder.find(term1);
+        OWLClass cl2 = finder.find(term2);
+
+        if(cl1 == null || cl2 == null)
+            return res;
+
+        //create TOP property
+        OWLObjectProperty relTop = factory.getOWLObjectProperty(IRI.create(ontology.getOntologyID().getOntologyIRI() + "#relTop")); 
+        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
         for(OWLObjectProperty p : properties){ 
             manager.addAxiom(ontology, factory.getOWLSubObjectPropertyOfAxiom(p, relTop));
         }
 
-        for(OWLClass A : classes) {
-            for(OWLClass B : classes){
-                res = res || checkExistentialRestriction(A, relTop, B);
-                res = res || checkUniversalRestriction(A, relTop, B);
-                res = res || checkMinCardinalityRestriction(A, relTop, B);
-            }
+        //DOESNT work that way ... 
+        if(checkRestrictions(cl1, relTop, cl2)){
+            res = true;
+        }
+        if(checkRestrictions(cl2, relTop, cl1)){
+            res = true;
+        }
+
+        //check inverse object property
+        OWLObjectPropertyExpression q = relTop.getInverseProperty();
+        if(checkRestrictions(cl1, q, cl2)){
+            res = true;
+        }
+        if(checkRestrictions(cl2, q, cl1)){
+            res = true;
         }
 
         return res;
     }
+
+    //private void assignNames(){
+    //}
 
     private boolean optimizedCheck(String term1, String term2){
 
@@ -330,7 +352,8 @@ public class RelatednessCalculator {
             res = checkSubsumption(term1, term2);
 
             //naive approach
-            res = res || bruteForceRestrictionCheck(term1, term2);
+            //res = res || bruteForceRestrictionCheck(term1, term2);
+            res = res || bruteForceCheckWithTopRelation(term1, term2);
             storeRelationsInFiles(destDir, fileName);
 
             //printRelatedByRelation();

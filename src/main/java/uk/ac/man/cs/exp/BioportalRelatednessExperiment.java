@@ -55,7 +55,8 @@ public class BioportalRelatednessExperiment {
         Set<TermPair> related_similar_pairs = new HashSet<>(relatedPairs);
         related_similar_pairs.addAll(similarPairs);
 
-        bioRelExp.findRelatedPairs(ontDir, destDir, related_similar_pairs);
+        bioRelExp.findRelatedPairsViaModuleExtraction(ontDir, destDir, related_similar_pairs);
+        //bioRelExp.findRelatedPairs(ontDir, destDir, related_similar_pairs);
         //bioRelExp.findRelatedPairs(ontDir, destDir);
 
         bioRelExp.analyseResults(new File(destDir.getPath() + "/relatedInOntology.csv"), related_similar_pairs, destDir);
@@ -86,17 +87,12 @@ public class BioportalRelatednessExperiment {
             }
         }
 
-        List<String[]> relatedInOntology = new ArrayList<>(relatedInOntologySet);
-
-        File resultRelCSV = new File(csvDir, "relatedInOntology.csv");
-        CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
-        writer.writeAll(relatedInOntology);
-        writer.close();
+        storeResults(relatedInOntologySet, csvDir);
     }
 
-    private void findRelatedPairs(File ontDir, File csvDir, Set<TermPair> pairs) throws IOException, OWLOntologyCreationException {
+    /*
+    private void findRelatedPairs(File ontDir, File csvDir, Set<TermPair> pairs) throws IOException {
 
-        // container for all found related pairs
         Set<String[]> relatedInOntologySet = new HashSet<>();
         Set<String> terms = new HashSet<>();
         for(TermPair p : pairs){
@@ -104,30 +100,50 @@ public class BioportalRelatednessExperiment {
             terms.add(p.second);
         }
 
+    }*/
+
+    private void findRelatedPairsViaModuleExtraction(File ontDir, File csvDir, Set<TermPair> pairs) throws IOException, OWLOntologyCreationException {
+
+        // container for all found related pairs
+        Set<String[]> relatedInOntologySet = new HashSet<>();
+
+        Set<String> terms = getTerms(pairs);
 
         for (File ontFile : ontDir.listFiles()) {
 
-            log.info("\tLoading ontology to check for RELATEDNESS " + " : " + ontFile.getName());
-            OntologyLoader loader = new OntologyLoader(ontFile, true);
-            ClassFinder finder = new ClassFinder(loader.getOntology());
+           log.info("\tLoading ontology to check for RELATEDNESS " + " : " + ontFile.getName());
+           OntologyLoader loader = new OntologyLoader(ontFile, true);
+           ClassFinder finder = new ClassFinder(loader.getOntology());
 
-            RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir, terms);
+           RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir, terms);
 
-            for (TermPair pair : termPairs) {
-                if(relCalc.related(pair.first, pair.second, true, csvDir, ontFile.getName())){
-                    log.info("RELATED PAIR: " + pair);
-                    String[] row = {pair.first, pair.second, ontFile.getName()};
-                    relatedInOntologySet.add(row);
-                }
+           relatedInOntologySet = getRelatedPairs(relCalc, csvDir, ontFile);
+        }
+
+        storeResults(relatedInOntologySet, csvDir);
+    }
+
+    private Set<String[]> getRelatedPairs(RelatednessCalculator relCalc, File csvDir, File ontFile) throws IOException, OWLOntologyCreationException {
+        Set<String[]> relatedInOntologySet = new HashSet<>();
+
+        for (TermPair pair : termPairs) {
+            if(relCalc.related(pair.first, pair.second, true, csvDir, ontFile.getName())){
+                log.info("RELATED PAIR: " + pair);
+                String[] row = {pair.first, pair.second, ontFile.getName()};
+                relatedInOntologySet.add(row);
             }
         }
 
-        List<String[]> relatedInOntology = new ArrayList<>(relatedInOntologySet);
+        return relatedInOntologySet;
+    }
 
-        File resultRelCSV = new File(csvDir, "relatedInOntology.csv");
-        CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
-        writer.writeAll(relatedInOntology);
-        writer.close();
+    private Set<String> getTerms(Set<TermPair> pairs) {
+        Set<String> terms = new HashSet<>();
+        for(TermPair p : pairs){
+            terms.add(p.first);
+            terms.add(p.second);
+        }
+        return terms;
     }
 
     private void analyseResults(File resultFile, Set<TermPair> GoldStadard_related, File destDir) throws IOException {
@@ -157,5 +173,15 @@ public class BioportalRelatednessExperiment {
 
     }
 
+    private void storeResults(Set<String[]> relatedInOntologySet, File csvDir) throws IOException {
+
+        List<String[]> relatedInOntology = new ArrayList<>(relatedInOntologySet);
+
+        File resultRelCSV = new File(csvDir, "relatedInOntology.csv");
+        CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
+        writer.writeAll(relatedInOntology);
+        writer.close();
+
+    }
 
 }
