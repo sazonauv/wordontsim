@@ -1,6 +1,8 @@
 //package wordontsim;
 package uk.ac.man.cs.sim;
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
