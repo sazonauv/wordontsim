@@ -299,18 +299,7 @@ public class RelatednessCalculator {
         return res;
     }
 
-    //private void assignNames(){
-    //}
-
-    private boolean optimizedCheck(String term1, String term2){
-
-        boolean res = false;
-
-        OWLClass cl1 = finder.find(term1);
-        OWLClass cl2 = finder.find(term2);
-
-        if(cl1 == null || cl2 == null)
-            return res;
+    private void addNamedRestrictionClasses(){
 
         Set<OWLClass> classes = ontology.getClassesInSignature(); 
         Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
@@ -321,37 +310,26 @@ public class RelatednessCalculator {
             for(OWLObjectProperty p : properties){
                 restrictionClasses.add(factory.getOWLObjectSomeValuesFrom(p,A));
                 restrictionClasses.add(factory.getOWLObjectAllValuesFrom(p,A));
-                //TODO: cardinality, etc.
+                restrictionClasses.add(factory.getOWLObjectMinCardinality(1,p,A));
+                restrictionClasses.add(factory.getOWLObjectMaxCardinality(1,p,A));
+
+                OWLObjectPropertyExpression q = p.getInverseProperty();
+
+                restrictionClasses.add(factory.getOWLObjectSomeValuesFrom(q,A));
+                restrictionClasses.add(factory.getOWLObjectAllValuesFrom(q,A));
+                restrictionClasses.add(factory.getOWLObjectMinCardinality(1,q,A));
+                restrictionClasses.add(factory.getOWLObjectMaxCardinality(1,q,A));
             }
         }
 
-        //create IRI name
-        String axiomName = "x0";
-        IRI iri;
-
         for(OWLClassExpression exp : restrictionClasses){
 
-            //generate UUID randomUUID()
-            iri = IRI.create(ontology.getOntologyID().getOntologyIRI() + "#" + axiomName);
-            axiomName = "x" + (Integer.parseInt(axiomName.substring(1,axiomName.length()))+1);
-            OWLClass cls = factory.getOWLClass(iri);
-
-            manager.addAxiom(ontology, factory.getOWLEquivalentClassesAxiom(cls, exp));
+            OWLClassExpression cl = factory.getOWLClass(IRI.create(UUID.randomUUID().toString()));
+            manager.addAxiom(ontology, factory.getOWLEquivalentClassesAxiom(cl, exp));
         }
 
-            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-
-            Set<OWLClass> superclasses = reasoner.getSuperClasses(cl1, false).getFlattened();
-            Set<OWLClass> subclasses = reasoner.getSubClasses(cl1, false).getFlattened();
-
-            if(superclasses != null)
-                res = superclasses.contains(cl2);
-
-            if(subclasses != null)
-                res = res || subclasses.contains(cl2);
-
-            return res;
-
+        reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+        return;
     }
 
     private void printRelatedByRelation(){
@@ -375,6 +353,7 @@ public class RelatednessCalculator {
         if(classesOnly) {
 
             //compute 'named' sub- and superclasses
+            //addNamedRestrictionClasses();
             res = checkSubsumption(term1, term2);
 
             //naive approach
@@ -383,7 +362,7 @@ public class RelatednessCalculator {
             storeRelationsInFiles(destDir, fileName);
 
             //printRelatedByRelation();
-            
+
             //optimized approach
             //res = optimizedCheck(term1, term2);
         }
