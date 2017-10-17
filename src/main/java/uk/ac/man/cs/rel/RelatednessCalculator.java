@@ -352,8 +352,8 @@ public class RelatednessCalculator {
             res = checkSubsumption(term1, term2);
 
             //naive approach
-            //res = res || bruteForceRestrictionCheck(term1, term2);
-            res = res || bruteForceCheckWithTopRelation(term1, term2);
+            res = res || bruteForceRestrictionCheck(term1, term2);
+            //res = res || bruteForceCheckWithTopRelation(term1, term2);
             storeRelationsInFiles(destDir, fileName);
 
             //printRelatedByRelation();

@@ -33,7 +33,6 @@ public class BioportalRelatednessExperiment {
         this.termPairs = termPairs;
     }
 
-
     public static void main(String[] args) throws IOException, OWLOntologyCreationException {
         File ontDir = new File(args[0]);
         File analogyFile = new File(args[1]);
@@ -63,8 +62,6 @@ public class BioportalRelatednessExperiment {
 
     }
 
-
-
     private void findRelatedPairs(File ontDir, File csvDir) throws IOException, OWLOntologyCreationException {
 
         // container for all found related pairs
@@ -76,31 +73,13 @@ public class BioportalRelatednessExperiment {
             OntologyLoader loader = new OntologyLoader(ontFile, true);
             ClassFinder finder = new ClassFinder(loader.getOntology());
 
-            RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir);
+           RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir);
+           relatedInOntologySet.addAll(getRelatedPairs(relCalc, csvDir, ontFile));
 
-            for (TermPair pair : termPairs) {
-                if(relCalc.related(pair.first, pair.second, true, csvDir, ontFile.getName())){
-                    log.info("RELATED PAIR: " + pair);
-                    String[] row = {pair.first, pair.second, ontFile.getName()};
-                    relatedInOntologySet.add(row);
-                }
-            }
         }
 
-        storeResults(relatedInOntologySet, csvDir);
+        storeResults(relatedInOntologySet, csvDir, "relatedInOntology.csv");
     }
-
-    /*
-    private void findRelatedPairs(File ontDir, File csvDir, Set<TermPair> pairs) throws IOException {
-
-        Set<String[]> relatedInOntologySet = new HashSet<>();
-        Set<String> terms = new HashSet<>();
-        for(TermPair p : pairs){
-            terms.add(p.first);
-            terms.add(p.second);
-        }
-
-    }*/
 
     private void findRelatedPairsViaModuleExtraction(File ontDir, File csvDir, Set<TermPair> pairs) throws IOException, OWLOntologyCreationException {
 
@@ -116,11 +95,10 @@ public class BioportalRelatednessExperiment {
            ClassFinder finder = new ClassFinder(loader.getOntology());
 
            RelatednessCalculator relCalc = new RelatednessCalculator(finder, csvDir, terms);
-
-           relatedInOntologySet = getRelatedPairs(relCalc, csvDir, ontFile);
+           relatedInOntologySet.addAll(getRelatedPairs(relCalc, csvDir, ontFile));
         }
 
-        storeResults(relatedInOntologySet, csvDir);
+        storeResults(relatedInOntologySet, csvDir, "relatedInOntology.csv");
     }
 
     private Set<String[]> getRelatedPairs(RelatednessCalculator relCalc, File csvDir, File ontFile) throws IOException, OWLOntologyCreationException {
@@ -161,23 +139,15 @@ public class BioportalRelatednessExperiment {
             } 
         }
 
-        File resultRelCSV = new File(destDir, "inStandard.csv");
-        CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
-        writer.writeAll(inStandard);
-        writer.close();
-
-        File resultRelCSV1 = new File(destDir, "notInStandard.csv");
-        CSVWriter writer1 = new CSVWriter(new FileWriter(resultRelCSV1));
-        writer1.writeAll(notInStandard);
-        writer1.close();
-
+        storeResults(inStandard, destDir, "inStandard.csv");
+        storeResults(notInStandard, destDir, "notInStandard.csv");
     }
 
-    private void storeResults(Set<String[]> relatedInOntologySet, File csvDir) throws IOException {
+    private void storeResults(Set<String[]> relatedInOntologySet, File csvDir, String name) throws IOException {
 
         List<String[]> relatedInOntology = new ArrayList<>(relatedInOntologySet);
 
-        File resultRelCSV = new File(csvDir, "relatedInOntology.csv");
+        File resultRelCSV = new File(csvDir, name);
         CSVWriter writer = new CSVWriter(new FileWriter(resultRelCSV));
         writer.writeAll(relatedInOntology);
         writer.close();
