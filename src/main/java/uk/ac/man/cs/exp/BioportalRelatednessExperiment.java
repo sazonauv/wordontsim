@@ -55,7 +55,6 @@ public class BioportalRelatednessExperiment {
         related_similar_pairs.addAll(similarPairs);
 
         bioRelExp.findRelatedPairsViaModuleExtraction(ontDir, destDir, related_similar_pairs);
-        //bioRelExp.findRelatedPairs(ontDir, destDir, related_similar_pairs);
         //bioRelExp.findRelatedPairs(ontDir, destDir);
 
         bioRelExp.analyseResults(new File(destDir.getPath() + "/relatedInOntology.csv"), related_similar_pairs, destDir);

@@ -60,7 +60,7 @@ public class RelatednessCalculator {
     private Set<String[]> A_p_B;
     private File destinatonDirectory;
 
-    public RelatednessCalculator(ClassFinder finder, File destDir) {
+    public RelatednessCalculator(ClassFinder finder, File destDir) throws OWLOntologyCreationException {
         this.finder = finder;
         this.factory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
         this.manager = OWLManager.createOWLOntologyManager();
@@ -68,6 +68,7 @@ public class RelatednessCalculator {
         this.A_p_B = new HashSet<String[]>();
         this.destinatonDirectory = destDir;
         loadReasoner();
+        //loadReasoner(true);
     }
     
     public RelatednessCalculator(ClassFinder finder, File destDir, Set<String> terms) throws OWLOntologyCreationException {
@@ -77,13 +78,11 @@ public class RelatednessCalculator {
         this.ontology = this.finder.getOntology();
         this.A_p_B = new HashSet<String[]>();
         this.destinatonDirectory = destDir;
-        loadModuleReasoner(terms);
+        loadModuleReasoner(terms, true);
     }
 
     private void loadReasoner() {
         try {
-
-            //TODO: Use finder to locate all relevant classes, extarct module, ... HERE
             reasoner = ReasonerLoader.initReasoner(finder.getOntology());
             reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
         } catch (Exception e) {
@@ -91,37 +90,64 @@ public class RelatednessCalculator {
         }
     }
 
-    private void loadModuleReasoner(Set<String> terms) throws OWLOntologyCreationException{
+    private void loadReasoner(boolean tboxOnly) throws OWLOntologyCreationException {
 
-            //Set<OWLAxiom> TBOX = ontology.getTBoxAxioms(Imports.INCLUDED);
-            //OWLOntology tbox_ont = manager.createOntology(TBOX, IRI.create(UUID.randomUUID().toString()));
-            //ClassFinder F = new ClassFinder(tbox_ont);
-            //SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(manager, tbox_ont, ModuleType.BOT);
+        ClassFinder F;
 
-            SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(manager, ontology, ModuleType.BOT);
+        if(tboxOnly){
+            Set<OWLAxiom> TBOX = ontology.getTBoxAxioms(Imports.INCLUDED);
+            OWLOntology tbox_ont = manager.createOntology(TBOX, IRI.create(UUID.randomUUID().toString()));
+            F = new ClassFinder(tbox_ont);
+        } else {
+            F = finder;
+        }
 
-            Set<OWLEntity> moduleSignature = new HashSet<>();
-            for(String term  : terms){
-                OWLClass cl = finder.find(term);
-                //OWLClass cl = F.find(term);
-                if(cl != null)
-                    moduleSignature.addAll(cl.getSignature());
-            }
+        try {
+            reasoner = ReasonerLoader.initReasoner(F.getOntology());
+            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-            Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
-            for(OWLObjectProperty p : properties){
-                moduleSignature.addAll(p.getSignature());
-            }
+    private void loadModuleReasoner(Set<String> terms, boolean tboxOnly) throws OWLOntologyCreationException{
 
-            OWLOntology module = extractor.extractAsOntology(moduleSignature, IRI.create(UUID.randomUUID().toString()));
+        ClassFinder F;
+        SyntacticLocalityModuleExtractor extractor;
 
+        if(tboxOnly){
+            Set<OWLAxiom> TBOX = ontology.getTBoxAxioms(Imports.INCLUDED);
+            OWLOntology tbox_ont = manager.createOntology(TBOX, IRI.create(UUID.randomUUID().toString()));
+            F = new ClassFinder(tbox_ont);
+            extractor = new SyntacticLocalityModuleExtractor(manager, tbox_ont, ModuleType.BOT);
+        } else {
+            extractor = new SyntacticLocalityModuleExtractor(manager, ontology, ModuleType.BOT);
+            F = finder;
 
-            try {
-                reasoner = ReasonerLoader.initReasoner(module);
-                reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        }
+
+        Set<OWLEntity> moduleSignature = new HashSet<>();
+
+        for(String term  : terms){
+            //OWLClass cl = finder.find(term);
+            OWLClass cl = F.find(term);
+            if(cl != null)
+                moduleSignature.addAll(cl.getSignature());
+        }
+
+        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+        for(OWLObjectProperty p : properties){
+            moduleSignature.addAll(p.getSignature());
+        }
+
+        OWLOntology module = extractor.extractAsOntology(moduleSignature, IRI.create(UUID.randomUUID().toString()));
+
+        try {
+            reasoner = ReasonerLoader.initReasoner(module);
+            reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private boolean checkSubsumption(String term1, String term2){
