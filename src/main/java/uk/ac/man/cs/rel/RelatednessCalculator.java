@@ -59,6 +59,7 @@ public class RelatednessCalculator {
     private OWLOntology ontology;
     private Set<String[]> A_p_B;
     private File destinatonDirectory;
+    private OWLObjectProperty relTop;
 
     public RelatednessCalculator(ClassFinder finder, File destDir) throws OWLOntologyCreationException {
         this.finder = finder;
@@ -76,6 +77,14 @@ public class RelatednessCalculator {
         this.factory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
         this.manager = OWLManager.createOWLOntologyManager();
         this.ontology = this.finder.getOntology();
+
+        //create TOP property
+        //this.relTop = factory.getOWLObjectProperty(IRI.create(UUID.randomUUID().toString())); 
+        //Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
+        //for(OWLObjectProperty p : properties){ 
+        //    manager.addAxiom(ontology, factory.getOWLSubObjectPropertyOfAxiom(p, relTop));
+        //}
+
         this.A_p_B = new HashSet<String[]>();
         this.destinatonDirectory = destDir;
         loadModuleReasoner(terms, true);
@@ -129,7 +138,6 @@ public class RelatednessCalculator {
         Set<OWLEntity> moduleSignature = new HashSet<>();
 
         for(String term  : terms){
-            //OWLClass cl = finder.find(term);
             OWLClass cl = F.find(term);
             if(cl != null)
                 moduleSignature.addAll(cl.getSignature());
@@ -272,14 +280,6 @@ public class RelatednessCalculator {
         if(cl1 == null || cl2 == null)
             return res;
 
-        //create TOP property
-        OWLObjectProperty relTop = factory.getOWLObjectProperty(IRI.create(ontology.getOntologyID().getOntologyIRI() + "#relTop")); 
-        Set<OWLObjectProperty> properties = ontology.getObjectPropertiesInSignature();
-        for(OWLObjectProperty p : properties){ 
-            manager.addAxiom(ontology, factory.getOWLSubObjectPropertyOfAxiom(p, relTop));
-        }
-
-        //DOESNT work that way ... 
         if(checkRestrictions(cl1, relTop, cl2)){
             res = true;
         }
