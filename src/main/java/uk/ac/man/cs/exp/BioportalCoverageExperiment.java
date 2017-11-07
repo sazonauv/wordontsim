@@ -44,6 +44,13 @@ public class BioportalCoverageExperiment {
     private static Set<TermPair> coveredSimilarPairs;
     private static Set<TermPair> coveredAnalogyPairs;
 
+    //count number of term pairs for each ontology
+    private static Set<String[]> allCoveredPairsDistribution;
+    private static Set<String[]> coveredRelatedPairsDistribution;
+    private static Set<String[]> coveredSimilarPairsDistribution;
+    private static Set<String[]> coveredAnalogyPairsDistribution;
+
+
     public BioportalCoverageExperiment(TermDataLoader tdLoader) {
         this.allTermPairs = tdLoader.getAllPairs();
         this.relatedTermPairs = tdLoader.getRelatednessPairs();
@@ -59,6 +66,12 @@ public class BioportalCoverageExperiment {
         this.coveredRelatedPairs = new HashSet<>();
         this.coveredSimilarPairs = new HashSet<>();
         this.coveredAnalogyPairs = new HashSet<>();
+
+        this.allCoveredPairsDistribution = new HashSet<>();
+        this.coveredRelatedPairsDistribution = new HashSet<>();
+        this.coveredSimilarPairsDistribution = new HashSet<>();
+        this.coveredAnalogyPairsDistribution = new HashSet<>();
+
     }
 
     public static void main(String[] args) throws IOException {
@@ -98,6 +111,11 @@ public class BioportalCoverageExperiment {
         storeResults(pairs2tuples(coveredSimilarPairs), destDir, "coverdSimilarPairs.csv");
         storeResults(pairs2tuples(coveredAnalogyPairs), destDir, "coverdAnalogyPairs.csv");
 
+        storeResults(allCoveredPairsDistribution, destDir, "coveredPairsDistribution.csv");
+        storeResults(coveredRelatedPairsDistribution, destDir, "coveredRelatedPairsDistribution.csv");
+        storeResults(coveredSimilarPairsDistribution, destDir, "coveredSimilarPairsDistribution.csv");
+        storeResults(coveredAnalogyPairsDistribution, destDir, "coveredAnalogyPairsDistribution.csv");
+
     }
 
 
@@ -114,6 +132,11 @@ public class BioportalCoverageExperiment {
         Set<String> ontologyCoveredRelatedTerms = new HashSet<>();
         Set<String> ontologyCoveredSimilarTerms = new HashSet<>();
         Set<String> ontologyCoveredAnalogyTerms = new HashSet<>();
+
+        Set<TermPair> ontologyCoveredPairs = new HashSet<>();
+        Set<TermPair> ontologyCoveredRelatedPairs = new HashSet<>();
+        Set<TermPair> ontologyCoveredSimilarPairs = new HashSet<>();
+        Set<TermPair> ontologyCoveredAnalogyPairs = new HashSet<>();
 
         Map<String, Set<String>> termOntsMap = new HashMap<>();
         for (String term : allTerms) {
@@ -156,28 +179,51 @@ public class BioportalCoverageExperiment {
             for(TermPair pair : allTermPairs){
                 if(ontologyCoveredTerms.contains(pair.first) && ontologyCoveredTerms.contains(pair.second)){
                    allCoveredPairs.add(new TermPair(pair.first, pair.second));
+                   ontologyCoveredPairs.add(new TermPair(pair.first, pair.second));
                 } 
             }
             for(TermPair pair : relatedTermPairs){
                 if(ontologyCoveredRelatedTerms.contains(pair.first) && ontologyCoveredRelatedTerms.contains(pair.second)){
                    coveredRelatedPairs.add(new TermPair(pair.first, pair.second));
+                   ontologyCoveredRelatedPairs.add(new TermPair(pair.first, pair.second));
                 } 
             }
             for(TermPair pair : similarTermPairs){
                 if(ontologyCoveredSimilarTerms.contains(pair.first) && ontologyCoveredSimilarTerms.contains(pair.second)){
                    coveredSimilarPairs.add(new TermPair(pair.first, pair.second));
+                   ontologyCoveredSimilarPairs.add(new TermPair(pair.first, pair.second));
                 } 
             }
             for(TermPair pair : analogyTermPairs){
                 if(ontologyCoveredAnalogyTerms.contains(pair.first) && ontologyCoveredAnalogyTerms.contains(pair.second)){
                    coveredAnalogyPairs.add(new TermPair(pair.first, pair.second));
+                   ontologyCoveredAnalogyPairs.add(new TermPair(pair.first, pair.second));
                 } 
             }
+
+            File destDir = new File(analogyFile.getParentFile().getPath() + "/coverageResults/ontologies/" + ontFile.getName());
+            destDir.mkdirs();
+
+            storeResults(pairs2tuples(ontologyCoveredPairs), destDir, "coveredPairs.csv");
+            storeResults(pairs2tuples(ontologyCoveredRelatedPairs), destDir, "coveredRelatedPairs.csv");
+            storeResults(pairs2tuples(ontologyCoveredSimilarPairs), destDir, "coveredSimilarPairs.csv");
+            storeResults(pairs2tuples(ontologyCoveredAnalogyPairs), destDir, "coveredAnalogyPairs.csv");
+
+            allCoveredPairsDistribution.add(new String[] {ontFile.getName(), String.valueOf(ontologyCoveredPairs.size())});
+            coveredRelatedPairsDistribution.add(new String[] {ontFile.getName(), String.valueOf(ontologyCoveredRelatedPairs.size())});
+            coveredSimilarPairsDistribution.add(new String[] {ontFile.getName(), String.valueOf(ontologyCoveredSimilarPairs.size())});
+            coveredAnalogyPairsDistribution.add(new String[] {ontFile.getName(), String.valueOf(ontologyCoveredAnalogyPairs.size())});
+
 
             ontologyCoveredTerms.clear();
             ontologyCoveredRelatedTerms.clear();
             ontologyCoveredSimilarTerms.clear();
             ontologyCoveredAnalogyTerms.clear();
+
+            ontologyCoveredPairs.clear();
+            ontologyCoveredRelatedPairs.clear();
+            ontologyCoveredSimilarPairs.clear();
+            ontologyCoveredAnalogyPairs.clear();
         }
 
         Map<String, Set<TermPair>> ontTermsMap = new HashMap<>();
